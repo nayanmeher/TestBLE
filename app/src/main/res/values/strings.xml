@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">TestBLE</string>
+    <string name="bluetoth">Bluetooth</string>
+    <string name="scan">Scan</string>
+</resources>
