@@ -2,4 +2,6 @@
     <string name="app_name">TestBLE</string>
     <string name="bluetoth">Bluetooth</string>
     <string name="scan">Scan</string>
+    <string name="connected">connected</string>
+    <string name="disconnect">Disconnect</string>
 </resources>

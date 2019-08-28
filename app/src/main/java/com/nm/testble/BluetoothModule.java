@@ -10,13 +10,19 @@ import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -25,6 +31,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class BluetoothModule extends AppCompatActivity {
@@ -37,11 +44,59 @@ public class BluetoothModule extends AppCompatActivity {
     private LeListAdapter leAdapter;
     private static final long SCANNING_PERIOD = 10000;
     private ListView leDeviceList;
+    private boolean mConnected;
+    private String mLeDeviceAddress;
+
+
+    private BluetoothLeServices bleService;
+    //manage service lifecycle
+   /* private final ServiceConnection mServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            bleService = ((BluetoothLeServices.LocalBinder)service).getService();
+            if (!bleService.initialize()){
+                Log.e(TAG, "unable to initialize bluetooth.");
+                finish();
+            }
+            bleService.initialize();
+            bleService.connect(mLeDeviceAddress);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            bleService = null;
+        }
+    };*/
+
+    /*private final BroadcastReceiver mGattUpdateReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (BluetoothLeServices.ACTION_GATT_CONNECTED.equals(action)){
+                mConnected = true;
+                updateConnectionState(R.string.connected);
+                invalidateOptionsMenu();
+            }
+            else if (BluetoothLeServices.ACTION_GATT_DISCONNECTED.equals(action)){
+                mConnected = false;
+                updateConnectionState(R.string.disconnect);
+                invalidateOptionsMenu();
+            }
+            else if (BluetoothLeServices.ACTION_GATT_SERVICE_DISCOVERED.equals(action)){
+                  //  displayGattServices(bleService.getSupportedGattService());
+            }
+            else if (BluetoothLeServices.ACTION_GATT_ACTION_DATA_AVAILABLE.equals(action)){
+               // displayData(intent.getStringExtra(BluetoothLeServices.EXTRA_DATA));
+            }
+        }
+    };*/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_module);
+
+        bleService = new BluetoothLeServices(getApplicationContext());
 
         leDeviceList = findViewById(R.id.le_device_list);
 
@@ -67,6 +122,30 @@ public class BluetoothModule extends AppCompatActivity {
 
 
 
+    }
+
+    @Override
+    protected void onResume() {
+        //registerReceiver(mGattUpdateReciever, makeGattUpdateIntentFilter());
+       // if (bleService != null){
+          //  bleService.initialize();
+           //final boolean result = bleService.connect(mLeDeviceAddress);
+            //Log.d(TAG, "Connect request result: "+result);
+       // }
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+     //   unregisterReceiver(mGattUpdateReciever);
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    //   unbindService(mServiceConnection);
+        bleService = null;
     }
 
     @Override
@@ -167,7 +246,16 @@ public class BluetoothModule extends AppCompatActivity {
                                 @Override
                                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                                     Log.d(TAG, "Postion:"+position +"parent: "+parent.getItemAtPosition(position));
-
+                                    mLeDeviceAddress = ((BluetoothDevice)parent.getItemAtPosition(position)).getAddress();
+                                    /*if (bleService.conntectionState == BluetoothLeServices.STATE_DISCONNECTED){
+                                        Log.d(TAG, "device is connected state. disconnecting.");
+                                        bleService.disconnect();
+                                    }
+                                    else {
+                                        Log.d(TAG, "Device is disconnected state. connecting.");
+                                    }*/
+                                    bleService.initialize();
+                                    bleService.connect(mLeDeviceAddress);
 
                                 }
                             });
@@ -176,6 +264,24 @@ public class BluetoothModule extends AppCompatActivity {
                     });
                 }
             };
+
+    private void updateConnectionState(final int resId){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+            }
+        });
+    }
+    private static IntentFilter makeGattUpdateIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothLeServices.ACTION_GATT_CONNECTED);
+        intentFilter.addAction(BluetoothLeServices.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(BluetoothLeServices.ACTION_GATT_SERVICE_DISCOVERED);
+        intentFilter.addAction(BluetoothLeServices.ACTION_GATT_ACTION_DATA_AVAILABLE);
+        return intentFilter;
+    }
+
 
 
 }
