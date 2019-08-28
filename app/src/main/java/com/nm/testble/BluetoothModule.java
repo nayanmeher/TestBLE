@@ -1,13 +1,20 @@
 package com.nm.testble;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -28,6 +35,8 @@ public class BluetoothModule extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_module);
+
+
 
         leAdapter = new LeListAdapter();
 
@@ -71,8 +80,42 @@ public class BluetoothModule extends AppCompatActivity {
     }
 
     public void startScan(){
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M){
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Location permission required.");
+                builder.setMessage("This application does not location information, but scanning LE device require this permission.");
+                builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+                    }
+                });
+                builder.show();
+                return;
+            }
+        }
+
        // mBtAdapter.startDiscovery();
         scanLeDevice(true);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        if (grantResults.length >0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+            scanLeDevice(true);
+        }
+        else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Location permission denied.");
+            builder.setMessage("As location permission not granted this application can not run.");
+            builder.setPositiveButton(android.R.string.ok, null);
+            builder.show();
+        }
+
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     private void scanLeDevice(final boolean enable){
