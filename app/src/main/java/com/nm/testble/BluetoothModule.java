@@ -21,24 +21,32 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
 
 public class BluetoothModule extends AppCompatActivity {
+
+    private static final String TAG = "BluetoothModule:";
 
     private BluetoothAdapter mBtAdapter;
     private boolean mScanning;
     private Handler mHandler;
     private LeListAdapter leAdapter;
     private static final long SCANNING_PERIOD = 10000;
+    private ListView leDeviceList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_module);
 
+        leDeviceList = findViewById(R.id.le_device_list);
 
 
-        leAdapter = new LeListAdapter();
+        leAdapter = new LeListAdapter(this);
 
         mHandler = new Handler();
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
@@ -55,6 +63,9 @@ public class BluetoothModule extends AppCompatActivity {
             Intent btEnableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(btEnableIntent, 0);
         }
+
+
+
 
     }
 
@@ -81,6 +92,7 @@ public class BluetoothModule extends AppCompatActivity {
 
     public void startScan(){
 
+        //ask permission for location
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M){
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -147,13 +159,23 @@ public class BluetoothModule extends AppCompatActivity {
                         @Override
                         public void run() {
                             leAdapter.addDevice(device);
+                            leAdapter.notifyDataSetChanged();
+                            leDeviceList.setAdapter(leAdapter);
+
+                            //set onclick listener on the list view
+                            leDeviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                @Override
+                                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                    Log.d(TAG, "Postion:"+position +"parent: "+parent.getItemAtPosition(position));
+
+
+                                }
+                            });
                             Log.d("BluetoothModule:","device::"+device.getAddress());
                         }
                     });
                 }
             };
 
-    private void addDevice(BluetoothDevice device){
 
-    }
 }
